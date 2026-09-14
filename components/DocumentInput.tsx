@@ -1,97 +1,120 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { Upload, FileText, Sparkles, AlertCircle, ArrowRight, CheckCircle2 } from "lucide-react";
+import {
+  Upload,
+  FileText,
+  Sparkles,
+  AlertCircle,
+  ArrowRight,
+  ShieldAlert,
+  Building,
+  Briefcase,
+  FileCheck2,
+  Lock,
+  Zap,
+} from "lucide-react";
 import { AnalysisResult } from "@/lib/types";
 
 interface DocumentInputProps {
   onAnalysisComplete: (result: AnalysisResult, rawText: string) => void;
   isLoading: boolean;
   setIsLoading: (loading: boolean) => void;
-  initialPreset?: string | null;
+  onOpenChatWithClause?: (clauseTitle: string) => void;
 }
 
-const PRESET_DOCUMENTS: Record<string, { title: string; subtitle: string; tag: string; path: string; personaNotice: string }> = {
-  chennai_rental: {
+const PRESET_CARDS = [
+  {
+    key: "chennai_rental",
     title: "Priya's Chennai Rental Agreement",
-    subtitle: "11-month lease with 10-month deposit, 7-day eviction, & painting penalties",
-    tag: "Persona Spotlight",
-    path: "/presets/chennai-rental-agreement.txt",
-    personaNotice: "Target Persona: Priya, first-time tenant in Velachery, Chennai facing 10 months deposit & 7-day eviction clause.",
+    location: "Velachery, Chennai (2BHK)",
+    persona: "First-time tenant moving from Madurai",
+    category: "Tenancy Lease",
+    badge: "Persona Spotlight",
+    icon: Building,
+    redFlagsPreview: ["10-Month Security Deposit", "7-Day Eviction Notice", "Mandatory Painting Charge"],
+    color: "from-amber-500/20 via-slate-900 to-slate-950",
+    border: "border-amber-500/40 hover:border-amber-400",
   },
-  tech_offer: {
-    title: "Tech Startup Employment & Non-Compete",
-    subtitle: "Full-time offer with 2-yr void non-compete, 90-day notice, & bonus clawback",
-    tag: "Employment",
-    path: "/presets/tech-employment-contract.txt",
-    personaNotice: "Target Persona: Software engineer evaluating offer with restrictive covenants in Bengaluru.",
+  {
+    key: "tech_offer",
+    title: "Bengaluru Tech Employment Offer",
+    location: "Koramangala, Bengaluru (SDE-2)",
+    persona: "Software engineer evaluating offer letter",
+    category: "Employment",
+    badge: "Career Mobility",
+    icon: Briefcase,
+    redFlagsPreview: ["2-Year Void Non-Compete", "90-Day Notice Lock-in", "Bonus Clawback + 18% Interest"],
+    color: "from-blue-500/20 via-slate-900 to-slate-950",
+    border: "border-blue-500/40 hover:border-blue-400",
   },
-};
+];
 
 export function DocumentInput({
   onAnalysisComplete,
   isLoading,
   setIsLoading,
-  initialPreset,
 }: DocumentInputProps) {
-  const [activeTab, setActiveTab] = useState<"paste" | "upload" | "presets">("presets");
+  const [activeTab, setActiveTab] = useState<"presets" | "paste" | "upload">("presets");
   const [inputText, setInputText] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [selectedPresetKey, setSelectedPresetKey] = useState<string>("chennai_rental");
   const [error, setError] = useState<string | null>(null);
   const [loadingStep, setLoadingStep] = useState<string>("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Load preset content into textarea
-  const loadPreset = async (presetKey: string) => {
-    setSelectedPresetKey(presetKey);
+  // 1-Click Instant Analysis for Presets
+  const handleInstantPresetAudit = async (presetKey: string) => {
     setError(null);
+    setIsLoading(true);
+    setLoadingStep("Loading sample contract draft...");
+
     try {
       const res = await fetch(`/api/preset?key=${presetKey}`);
-      if (!res.ok) {
-        throw new Error("Failed to load preset");
-      }
+      if (!res.ok) throw new Error("Could not retrieve preset text.");
       const data = await res.json();
       setInputText(data.content);
-      setActiveTab("paste");
-    } catch {
-      setError("Could not load sample document. You can paste your own text directly.");
-    }
-  };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setError(null);
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      if (file.size > 10 * 1024 * 1024) {
-        setError("File size exceeds 10MB limit. Please upload a smaller document.");
-        return;
+      setLoadingStep("Extracting clauses & detecting Indian legal traps...");
+      const analyzeRes = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: data.content }),
+      });
+
+      const analyzeData = await analyzeRes.json();
+      if (!analyzeRes.ok || !analyzeData.success) {
+        throw new Error(analyzeData.error || "Analysis failed.");
       }
-      setSelectedFile(file);
+
+      onAnalysisComplete(analyzeData.data, data.content);
+    } catch (err: unknown) {
+      const e = err as Error;
+      setError(e.message || "An unexpected error occurred.");
+      setIsLoading(false);
     }
   };
 
-  const handleAnalyze = async () => {
+  const handleManualAnalyze = async () => {
     setError(null);
 
     if (activeTab === "upload" && !selectedFile) {
-      setError("Please select a PDF or plain text document to upload.");
+      setError("Please select a PDF or plain-text document to upload.");
       return;
     }
 
     if (activeTab !== "upload" && (!inputText || inputText.trim().length < 50)) {
-      setError("Please paste or select a legal document with at least 50 characters.");
+      setError("Please paste a legal agreement with at least 50 characters.");
       return;
     }
 
     setIsLoading(true);
-    setLoadingStep("Reading document & sanitizing input...");
+    setLoadingStep("Reading document in server memory...");
 
     try {
       let response: Response;
 
       if (activeTab === "upload" && selectedFile) {
-        setLoadingStep("Extracting clauses from PDF...");
+        setLoadingStep("Extracting text from PDF file...");
         const formData = new FormData();
         formData.append("file", selectedFile);
         response = await fetch("/api/analyze", {
@@ -99,7 +122,7 @@ export function DocumentInput({
           body: formData,
         });
       } else {
-        setLoadingStep("Analyzing clauses & scanning red flags with Gemini...");
+        setLoadingStep("Deconstructing clauses with Gemini 2.0 Flash...");
         response = await fetch("/api/analyze", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -107,14 +130,12 @@ export function DocumentInput({
         });
       }
 
-      setLoadingStep("Categorizing obligations & generating plain-language summaries...");
       const result = await response.json();
-
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to analyze document.");
       }
 
-      onAnalysisComplete(result.data, inputText || selectedFile?.name || "Uploaded Document");
+      onAnalysisComplete(result.data, inputText || selectedFile?.name || "Uploaded Contract");
     } catch (err: unknown) {
       const e = err as Error;
       setError(e.message || "An unexpected error occurred during analysis.");
@@ -125,163 +146,188 @@ export function DocumentInput({
   };
 
   return (
-    <section aria-label="Document Input and Analysis" className="space-y-6">
-      {/* Persona Callout Banner */}
-      <div className="bg-gradient-to-r from-nyaya-900 via-nyaya-850 to-nyaya-900 border border-nyaya-700/60 rounded-2xl p-4 sm:p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute -right-6 -bottom-6 w-32 h-32 bg-gold-500/10 rounded-full blur-2xl pointer-events-none" />
-        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center space-x-2">
-              <span className="bg-gold-500/20 text-gold-300 font-bold text-xs uppercase tracking-wider px-2.5 py-0.5 rounded-full border border-gold-500/30">
-                Priya&apos;s Persona Spotlight
-              </span>
-              <span className="text-xs text-slate-400">Chennai Rental Case Study</span>
-            </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
-              Reviewing an agreement without a lawyer?
+    <section aria-label="Legal Document Studio" className="space-y-6">
+      {/* Studio Container */}
+      <div className="glass-panel rounded-3xl p-6 sm:p-8 shadow-2xl border border-white/10 relative overflow-hidden">
+        {/* Subtle Ambient Background Glow */}
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        {/* Header & Tabs */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-white/10">
+          <div>
+            <span className="text-xs font-bold uppercase tracking-widest text-amber-400 block mb-1">
+              Interactive Legal Clarity Studio
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-heading font-black text-white tracking-tight">
+              Deconstruct Any Contract in Seconds
             </h2>
-            <p className="text-xs sm:text-sm text-slate-300 max-w-2xl">
-              Priya is renting a 2BHK in Chennai and was handed an 11-month contract with 10 months deposit, 7-day eviction notice, and painting deductions. NyayaSetu deconstructs every clause, detects one-sided traps, and provides plain English, Hindi, and Tamil rewrites.
+            <p className="text-xs sm:text-sm text-slate-300 mt-1">
+              Select a pre-loaded case study below or upload your own agreement to reveal hidden traps.
             </p>
           </div>
-          <button
-            onClick={() => loadPreset("chennai_rental")}
-            className="shrink-0 flex items-center space-x-2 bg-gradient-to-r from-gold-500 to-amber-600 hover:from-gold-400 hover:to-amber-500 text-nyaya-950 font-bold px-4 py-2.5 rounded-xl shadow-lg hover:shadow-gold-500/20 transition-all text-xs sm:text-sm"
-          >
-            <span>Load Priya&apos;s Lease</span>
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
 
-      {/* Input Mode Tabs */}
-      <div className="bg-nyaya-900/80 border border-nyaya-800 rounded-2xl p-4 sm:p-6 shadow-lg space-y-4">
-        <div className="flex border-b border-nyaya-800 gap-2 sm:gap-4 pb-3" role="tablist" aria-label="Input Method">
-          <button
-            role="tab"
-            aria-selected={activeTab === "presets"}
-            aria-controls="panel-presets"
-            id="tab-presets"
-            onClick={() => setActiveTab("presets")}
-            className={`flex items-center space-x-2 pb-2 px-3 text-sm font-semibold transition-all border-b-2 ${
-              activeTab === "presets"
-                ? "border-gold-400 text-gold-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>Sample Presets</span>
-          </button>
+          {/* Input Method Selector Tabs */}
+          <div className="flex items-center space-x-1.5 bg-slate-950/80 p-1.5 rounded-2xl border border-white/10 shrink-0 self-start md:self-auto">
+            <button
+              onClick={() => setActiveTab("presets")}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "presets"
+                  ? "bg-amber-500 text-nyaya-950 shadow-md shadow-amber-500/20"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Zap className="w-3.5 h-3.5" />
+              <span>1-Click Presets</span>
+            </button>
 
-          <button
-            role="tab"
-            aria-selected={activeTab === "paste"}
-            aria-controls="panel-paste"
-            id="tab-paste"
-            onClick={() => setActiveTab("paste")}
-            className={`flex items-center space-x-2 pb-2 px-3 text-sm font-semibold transition-all border-b-2 ${
-              activeTab === "paste"
-                ? "border-gold-400 text-gold-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <FileText className="w-4 h-4" />
-            <span>Paste Agreement Text</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("paste")}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "paste"
+                  ? "bg-amber-500 text-nyaya-950 shadow-md shadow-amber-500/20"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <FileText className="w-3.5 h-3.5" />
+              <span>Paste Text</span>
+            </button>
 
-          <button
-            role="tab"
-            aria-selected={activeTab === "upload"}
-            aria-controls="panel-upload"
-            id="tab-upload"
-            onClick={() => setActiveTab("upload")}
-            className={`flex items-center space-x-2 pb-2 px-3 text-sm font-semibold transition-all border-b-2 ${
-              activeTab === "upload"
-                ? "border-gold-400 text-gold-400"
-                : "border-transparent text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Upload className="w-4 h-4" />
-            <span>Upload PDF / TXT</span>
-          </button>
+            <button
+              onClick={() => setActiveTab("upload")}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-bold transition-all ${
+                activeTab === "upload"
+                  ? "bg-amber-500 text-nyaya-950 shadow-md shadow-amber-500/20"
+                  : "text-slate-400 hover:text-white"
+              }`}
+            >
+              <Upload className="w-3.5 h-3.5" />
+              <span>Upload PDF</span>
+            </button>
+          </div>
         </div>
 
-        {/* Tab 1: Presets */}
+        {/* TAB 1: 1-Click Preset Showcase */}
         {activeTab === "presets" && (
-          <div id="panel-presets" role="tabpanel" aria-labelledby="tab-presets" className="space-y-4 pt-2">
-            <p className="text-xs sm:text-sm text-slate-400">
-              Select a pre-loaded real-world legal contract to test immediate clause deconstruction and risk detection:
-            </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Object.entries(PRESET_DOCUMENTS).map(([key, item]) => (
-                <div
-                  key={key}
-                  onClick={() => loadPreset(key)}
-                  className={`p-4 rounded-xl border transition-all cursor-pointer text-left space-y-2 relative ${
-                    selectedPresetKey === key
-                      ? "bg-nyaya-800/80 border-gold-400/80 ring-1 ring-gold-400/50 shadow-md"
-                      : "bg-nyaya-900/60 border-nyaya-800 hover:border-nyaya-700 hover:bg-nyaya-850"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-nyaya-700 text-gold-300">
-                      {item.tag}
-                    </span>
-                    {selectedPresetKey === key && (
-                      <CheckCircle2 className="w-4 h-4 text-gold-400" />
-                    )}
+          <div className="pt-6 space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {PRESET_CARDS.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div
+                    key={card.key}
+                    className={`rounded-2xl p-6 border transition-all glass-card glass-card-hover bg-gradient-to-b ${card.color} ${card.border} flex flex-col justify-between space-y-4 relative group`}
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-2 mb-3">
+                        <span className="text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          {card.badge}
+                        </span>
+                        <span className="text-xs text-slate-400 font-medium">{card.category}</span>
+                      </div>
+
+                      <div className="flex items-start space-x-3">
+                        <div className="w-10 h-10 rounded-xl bg-slate-800/80 border border-white/10 flex items-center justify-center shrink-0 text-amber-400 shadow-inner mt-0.5">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h3 className="font-heading font-extrabold text-base sm:text-lg text-white group-hover:text-amber-300 transition-colors">
+                            {card.title}
+                          </h3>
+                          <p className="text-xs text-slate-400 mt-0.5">{card.location} • {card.persona}</p>
+                        </div>
+                      </div>
+
+                      {/* Red Flags Preview Tag Cloud */}
+                      <div className="mt-4 pt-3 border-t border-white/5 space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">
+                          Hidden Traps to Spot:
+                        </span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {card.redFlagsPreview.map((flag, idx) => (
+                            <span
+                              key={idx}
+                              className="text-[11px] font-medium bg-rose-500/10 text-rose-300 border border-rose-500/20 px-2 py-0.5 rounded-lg flex items-center space-x-1"
+                            >
+                              <ShieldAlert className="w-2.5 h-2.5 text-rose-400" />
+                              <span>{flag}</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 1-Click Instant Audit CTA */}
+                    <button
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => handleInstantPresetAudit(card.key)}
+                      className="w-full py-3 rounded-xl font-bold text-xs sm:text-sm bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-nyaya-950 flex items-center justify-center space-x-2 shadow-lg shadow-amber-500/20 group-hover:scale-[1.01] transition-all disabled:opacity-50"
+                    >
+                      <Sparkles className="w-4 h-4 text-nyaya-950" />
+                      <span>{isLoading ? "Running Audit..." : "1-Click Instant Audit"}</span>
+                      <ArrowRight className="w-4 h-4 text-nyaya-950" />
+                    </button>
                   </div>
-                  <h3 className="font-bold text-slate-100 text-sm sm:text-base">{item.title}</h3>
-                  <p className="text-xs text-slate-400">{item.subtitle}</p>
-                  <div className="pt-2">
-                    <span className="text-xs text-gold-400 font-semibold inline-flex items-center space-x-1">
-                      <span>Click to load and inspect clauses</span>
-                      <ArrowRight className="w-3 h-3" />
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* Tab 2: Paste Text */}
+        {/* TAB 2: Paste Agreement Text */}
         {activeTab === "paste" && (
-          <div id="panel-paste" role="tabpanel" aria-labelledby="tab-paste" className="space-y-3 pt-2">
-            <div className="flex items-center justify-between">
-              <label htmlFor="contract-paste" className="text-xs sm:text-sm font-semibold text-slate-200">
+          <div className="pt-6 space-y-4">
+            <div className="flex items-center justify-between text-xs">
+              <label htmlFor="contract-editor" className="font-bold text-slate-300">
                 Paste contract, offer letter, or agreement text:
               </label>
-              <span className="text-xs text-slate-400">
-                {inputText.length.toLocaleString()} characters
+              <span className="font-mono text-slate-400">
+                {inputText.length.toLocaleString()} characters ({inputText.split(/\s+/).filter(Boolean).length} words)
               </span>
             </div>
-            <textarea
-              id="contract-paste"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Paste your legal document here (e.g. Residential Tenancy Agreement, Employment Offer Letter, Service Agreement, NDA)..."
-              rows={10}
-              className="w-full bg-nyaya-950 border border-nyaya-800 rounded-xl p-3.5 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-gold-400 focus:ring-1 focus:ring-gold-400 font-mono transition-colors"
-            />
-            <div className="flex justify-between items-center text-xs text-slate-400">
-              <span>Supports contracts up to 100,000 characters. In-memory processing only.</span>
+
+            <div className="relative">
+              <textarea
+                id="contract-editor"
+                value={inputText}
+                onChange={(e) => setInputText(e.target.value)}
+                placeholder="Paste the full text of your legal agreement here (e.g. Residential Tenancy Agreement, Offer Letter, Terms of Service, NDA)..."
+                rows={9}
+                className="w-full bg-slate-950/80 border border-slate-800 rounded-2xl p-4 text-xs sm:text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-amber-400 focus:ring-1 focus:ring-amber-400 font-mono transition-colors shadow-inner"
+              />
               {inputText.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setInputText("")}
-                  className="text-slate-400 hover:text-rose-400 transition-colors"
+                  className="absolute top-3 right-3 text-xs text-slate-500 hover:text-rose-400 bg-slate-900 px-2 py-1 rounded border border-slate-800 transition-colors"
                 >
-                  Clear text
+                  Clear
                 </button>
               )}
+            </div>
+
+            <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center space-x-1 text-emerald-400">
+                <Lock className="w-3.5 h-3.5" />
+                <span>Encrypted in-memory processing • Never written to disk</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleManualAnalyze}
+                disabled={isLoading || inputText.trim().length < 50}
+                className="px-6 py-2.5 rounded-xl font-bold bg-amber-500 hover:bg-amber-400 text-nyaya-950 transition-all shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>{isLoading ? "Analyzing..." : "Analyze Pasted Text"}</span>
+              </button>
             </div>
           </div>
         )}
 
-        {/* Tab 3: Upload File */}
+        {/* TAB 3: Upload PDF / TXT File */}
         {activeTab === "upload" && (
-          <div id="panel-upload" role="tabpanel" aria-labelledby="tab-upload" className="space-y-4 pt-2">
+          <div className="pt-6 space-y-4">
             <div
               onClick={() => fileInputRef.current?.click()}
               onDragOver={(e) => e.preventDefault()}
@@ -291,76 +337,81 @@ export function DocumentInput({
                   setSelectedFile(e.dataTransfer.files[0]);
                 }
               }}
-              className="border-2 border-dashed border-nyaya-700 hover:border-gold-400/80 bg-nyaya-950/60 rounded-xl p-8 text-center cursor-pointer transition-colors space-y-3"
+              className="border-2 border-dashed border-slate-700 hover:border-amber-400 bg-slate-950/50 rounded-2xl p-10 text-center cursor-pointer transition-all space-y-3 group"
             >
-              <Upload className="w-8 h-8 text-gold-400 mx-auto" />
+              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto text-amber-400 group-hover:scale-110 transition-transform">
+                <Upload className="w-7 h-7" />
+              </div>
               <div>
-                <p className="text-sm font-semibold text-slate-200">
-                  {selectedFile ? selectedFile.name : "Click to browse or drag & drop PDF/TXT document"}
+                <p className="text-base font-bold text-slate-200">
+                  {selectedFile ? selectedFile.name : "Drag & drop PDF or click to browse"}
                 </p>
-                <p className="text-xs text-slate-400 mt-1">
-                  PDF or plain text files up to 10MB. Document text is extracted in memory and never saved.
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Supports .PDF and .TXT documents up to 10MB. Text is parsed securely in server memory and discarded immediately.
                 </p>
               </div>
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".pdf,.txt"
-                onChange={handleFileUpload}
+                onChange={(e) => {
+                  if (e.target.files && e.target.files[0]) setSelectedFile(e.target.files[0]);
+                }}
                 className="hidden"
-                aria-label="Upload PDF or plain text file"
               />
             </div>
+
             {selectedFile && (
-              <div className="flex items-center justify-between bg-nyaya-850 p-3 rounded-xl border border-nyaya-700 text-xs text-slate-200">
-                <span className="truncate max-w-md">Selected: {selectedFile.name} ({(selectedFile.size / 1024).toFixed(1)} KB)</span>
-                <button
-                  type="button"
-                  onClick={() => setSelectedFile(null)}
-                  className="text-rose-400 hover:underline font-semibold ml-2"
-                >
-                  Remove
-                </button>
+              <div className="flex items-center justify-between p-3.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
+                <div className="flex items-center space-x-2 truncate">
+                  <FileCheck2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                  <span className="font-bold text-slate-200 truncate">{selectedFile.name}</span>
+                  <span className="text-slate-500">({(selectedFile.size / 1024).toFixed(1)} KB)</span>
+                </div>
+                <div className="flex items-center space-x-3 shrink-0">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFile(null)}
+                    className="text-rose-400 hover:underline font-semibold"
+                  >
+                    Remove
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleManualAnalyze}
+                    disabled={isLoading}
+                    className="px-4 py-1.5 rounded-lg font-bold bg-amber-500 hover:bg-amber-400 text-nyaya-950 shadow transition-all"
+                  >
+                    Start Audit
+                  </button>
+                </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Error Notification */}
+        {/* Error Alert */}
         {error && (
-          <div role="alert" className="flex items-start space-x-2 p-3.5 rounded-xl bg-rose-950/50 border border-rose-800/80 text-rose-300 text-xs sm:text-sm">
+          <div role="alert" className="mt-4 p-4 rounded-xl bg-rose-950/60 border border-rose-800/80 text-rose-300 text-xs sm:text-sm flex items-start space-x-2">
             <AlertCircle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Action Button & Loading Status */}
-        <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-xs text-slate-400">
-            {isLoading ? (
-              <div className="flex items-center space-x-2 text-gold-400 font-medium animate-pulse">
-                <Sparkles className="w-4 h-4 shrink-0" />
-                <span>{loadingStep || "Processing with NyayaSetu..."}</span>
-              </div>
-            ) : (
-              <span>Tip: Review both the Summary and the Red Flags before signing!</span>
-            )}
+        {/* Loading Progress Feedback */}
+        {isLoading && (
+          <div className="mt-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center space-x-3 animate-pulse">
+            <div className="w-6 h-6 rounded-full border-2 border-amber-400 border-t-transparent animate-spin shrink-0" />
+            <div>
+              <span className="text-xs font-bold text-amber-300 block">
+                {loadingStep || "AI Processing with NyayaSetu..."}
+              </span>
+              <span className="text-[11px] text-slate-400">
+                Auditing clauses against Indian contract and tenancy statutory benchmarks...
+              </span>
+            </div>
           </div>
-
-          <button
-            type="button"
-            onClick={handleAnalyze}
-            disabled={isLoading}
-            className={`w-full sm:w-auto px-6 py-3 rounded-xl font-bold text-sm flex items-center justify-center space-x-2 shadow-lg transition-all ${
-              isLoading
-                ? "bg-nyaya-800 text-slate-400 cursor-not-allowed"
-                : "bg-gold-500 hover:bg-gold-400 text-nyaya-950 shadow-gold-500/20 hover:scale-[1.02]"
-            }`}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>{isLoading ? "Analyzing Document..." : "Analyze Clauses & Detect Risks"}</span>
-          </button>
-        </div>
+        )}
       </div>
     </section>
   );

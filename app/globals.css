@@ -1,13 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,300..700;1,300..700&family=Plus+Jakarta+Sans:ital,wght@0,400..900;1,400..900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --font-scale: 1rem;
-  --bg-primary: #0b142c;
-  --bg-surface: #122045;
-  --text-main: #f8fafc;
-  --accent-gold: #f59e0b;
+  --font-heading: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  --font-body: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: #050a18;
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
+
+h1, h2, h3, h4, h5, h6, .font-heading {
+  font-family: var(--font-heading);
+}
+
+/* Ambient Radial Mesh Background */
+.mesh-bg {
+  background-color: #050a18;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(30, 53, 109, 0.4) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(245, 158, 11, 0.15) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(18, 32, 69, 0.3) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.1) 0px, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* Glassmorphism Classes */
+.glass-card {
+  background: rgba(15, 23, 42, 0.65);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-card-hover:hover {
+  background: rgba(26, 38, 68, 0.7);
+  border-color: rgba(245, 158, 11, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px -5px rgba(245, 158, 11, 0.15);
+}
+
+.glass-panel {
+  background: rgba(10, 18, 38, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Glowing Accent Utilities */
+.glow-amber {
+  box-shadow: 0 0 25px -5px rgba(245, 158, 11, 0.4);
+}
+
+.glow-rose {
+  box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.35);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.35);
 }
 
 /* Accessible Font Scaling */
@@ -29,30 +89,33 @@ html.font-scale-xl {
 
 /* WCAG High Contrast Mode */
 html.high-contrast {
-  --bg-primary: #000000;
-  --bg-surface: #0a0a0a;
-  --text-main: #ffffff;
-  --accent-gold: #ffd700;
+  --font-heading: system-ui, sans-serif;
+  --font-body: system-ui, sans-serif;
 }
 
-html.high-contrast body {
-  background-color: #000000 !important;
+html.high-contrast body,
+html.high-contrast .mesh-bg {
+  background: #000000 !important;
+  background-image: none !important;
   color: #ffffff !important;
 }
 
-html.high-contrast .border-slate-800,
-html.high-contrast .border-slate-700,
-html.high-contrast .border-nyaya-800 {
-  border-color: #ffffff !important;
-  border-width: 2px !important;
+html.high-contrast .glass-card,
+html.high-contrast .glass-panel,
+html.high-contrast article,
+html.high-contrast section {
+  background: #0d0d0d !important;
+  border: 2px solid #ffffff !important;
+  box-shadow: none !important;
 }
 
 html.high-contrast button,
 html.high-contrast input,
 html.high-contrast textarea,
 html.high-contrast select {
+  border: 2px solid #ffd700 !important;
   outline: 2px solid #ffd700 !important;
-  outline-offset: 2px;
+  color: #ffffff !important;
 }
 
 /* Focus Visible for Keyboard Accessibility */
@@ -61,21 +124,33 @@ html.high-contrast select {
   outline-offset: 3px !important;
 }
 
-/* Custom Scrollbars */
+/* Custom Sleek Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 7px;
+  height: 7px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0b142c;
+  background: #050a18;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2b4b9b;
+  background: #1e356d;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: #4b7bd4;
+}
+
+/* Subtle Shimmer Animation */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 2.5s infinite;
 }

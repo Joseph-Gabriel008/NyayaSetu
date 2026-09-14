@@ -32,12 +32,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="font-scale-md">
-      <body className="bg-nyaya-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-gold-500 selection:text-nyaya-950">
+    <html lang="en" className="font-scale-md scroll-smooth">
+      <body className="mesh-bg text-slate-100 min-h-screen flex flex-col font-sans antialiased selection:bg-gold-500 selection:text-nyaya-950">
         <AccessibilityProvider>
           <AccessibilityBar />
           <Header />
-          <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <main id="main-content" className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-10">
             {children}
           </main>
           <LegalDisclaimer />
