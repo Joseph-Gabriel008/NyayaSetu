@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-scale: 1rem;
+  --bg-primary: #0b142c;
+  --bg-surface: #122045;
+  --text-main: #f8fafc;
+  --accent-gold: #f59e0b;
+}
+
+/* Accessible Font Scaling */
+html.font-scale-sm {
+  font-size: 14px;
+}
+
+html.font-scale-md {
+  font-size: 16px;
+}
+
+html.font-scale-lg {
+  font-size: 18px;
+}
+
+html.font-scale-xl {
+  font-size: 20px;
+}
+
+/* WCAG High Contrast Mode */
+html.high-contrast {
+  --bg-primary: #000000;
+  --bg-surface: #0a0a0a;
+  --text-main: #ffffff;
+  --accent-gold: #ffd700;
+}
+
+html.high-contrast body {
+  background-color: #000000 !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast .border-slate-800,
+html.high-contrast .border-slate-700,
+html.high-contrast .border-nyaya-800 {
+  border-color: #ffffff !important;
+  border-width: 2px !important;
+}
+
+html.high-contrast button,
+html.high-contrast input,
+html.high-contrast textarea,
+html.high-contrast select {
+  outline: 2px solid #ffd700 !important;
+  outline-offset: 2px;
+}
+
+/* Focus Visible for Keyboard Accessibility */
+*:focus-visible {
+  outline: 3px solid #f59e0b !important;
+  outline-offset: 3px !important;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0b142c;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2b4b9b;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #4b7bd4;
+}
