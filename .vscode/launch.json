@@ -1,0 +1,41 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Next.js: Debug Server-Side (API Routes & Logic)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev"
+    },
+    {
+      "name": "Next.js: Full Stack (Server + Chrome)",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run dev",
+      "serverReadyAction": {
+        "pattern": "- Local:.+(https?://.+)",
+        "uriFormat": "%s",
+        "action": "debugWithChrome"
+      }
+    },
+    {
+      "name": "Next.js: Debug Client-Side (Chrome)",
+      "type": "chrome",
+      "request": "launch",
+      "url": "http://localhost:3000",
+      "webRoot": "${workspaceFolder}"
+    },
+    {
+      "name": "Vitest: Debug Current Test File",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npx vitest run ${file}"
+    },
+    {
+      "name": "Vitest: Debug All Tests",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "npm run test"
+    }
+  ]
+}
