@@ -1,0 +1,28 @@
+EMPLOYMENT AGREEMENT AND CONFIDENTIALITY COVENANT
+
+This Employment Agreement is entered into on 15th July 2024 between NexusScale Software Technologies Private Limited ("Company"), having its registered office at Koramangala, Bengaluru, Karnataka, and Rahul Sharma ("Employee"), residing at Indiranagar, Bengaluru.
+
+1. ROLE AND REMUNERATION
+The Employee shall serve as Senior Software Engineer. The Company shall pay an Annual Total Target Compensation of INR 18,00,000/- subject to applicable taxes. A one-time joining bonus of INR 2,00,000/- will be paid in the first payroll cycle.
+
+2. NOTICE PERIOD AND TERMINATION
+The Employee agrees to serve a mandatory 90 (ninety) days notice period upon resignation. The Company reserves the sole and exclusive right to waive the notice period without paying salary in lieu, or to demand full buyout at gross salary. The Company may terminate the Employee at any time without notice or severance for performance reasons as determined solely by the Company.
+
+3. BONUS CLAWBACK
+If the Employee separates from the Company for any reason whatsoever within 24 (twenty-four) months from joining, the Employee shall immediately refund the entire gross joining bonus of INR 2,00,000/- plus 18% annual interest.
+
+4. NON-COMPETE RESTRICTION
+During employment and for a continuous period of 2 (two) years following termination or departure for any reason, the Employee shall not directly or indirectly accept employment, consult, advise, or engage in any business entity anywhere in India or globally that operates in cloud computing, developer tooling, AI, or software development generally.
+
+5. INTELLECTUAL PROPERTY AND MORAL RIGHTS
+All inventions, ideas, source codes, workflows, designs, whether created during or outside working hours, on company equipment or personal equipment, shall be the sole property of NexusScale. The Employee irrevocably waives all moral rights and claims under Section 57 of the Indian Copyright Act.
+
+6. UNLIMITED INDEMNITY
+The Employee agrees to defend, indemnify, and hold harmless the Company and its directors from any losses, damages, client claims, or operational bugs arising out of the Employee's code, commit history, or employment services without any cap or limitation of liability.
+
+7. GOVERNING LAW AND DISPUTE RESOLUTION
+This agreement is governed by the laws of India. Any dispute shall be resolved through binding arbitration in Bengaluru, with arbitrator fees borne entirely by the Employee.
+
+IN WITNESS WHEREOF the parties have executed this Agreement.
+COMPANY: [NexusScale Pvt Ltd]
+EMPLOYEE: [Rahul Sharma]
