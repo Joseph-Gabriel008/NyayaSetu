@@ -454,6 +454,25 @@ export function chatFallback(question: string, docText: string): { answer: strin
     };
   }
 
+  // Check if any meaningful words from question exist in the document text
+  const questionWords = q
+    .replace(/[^a-z0-9\s]/g, "")
+    .split(/\s+/)
+    .filter(
+      (w) =>
+        w.length > 3 &&
+        !["what", "when", "where", "which", "does", "have", "this", "that", "with", "from", "about", "your", "tell"].includes(w)
+    );
+
+  const hasRelevantTerms = questionWords.some((w) => docText.toLowerCase().includes(w));
+
+  if (!hasRelevantTerms) {
+    return {
+      answer: `The provided document does not contain any clause addressing this topic ("${question}"). No matching terms were found in the contract.`,
+      citations: [],
+    };
+  }
+
   return {
     answer: `Based on your document: I reviewed the text regarding "${question}". The document contains specific clauses detailing rights, liabilities, and procedures between the parties. Please review the highlighted red-flag clauses and summary cards for exact provisions governing this subject.`,
     citations: [

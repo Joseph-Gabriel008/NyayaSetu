@@ -10,7 +10,7 @@ interface RateLimitRecord {
 const ipStore = new Map<string, RateLimitRecord>();
 
 // Cleanup stale records every 5 minutes
-setInterval(() => {
+const cleanupTimer = setInterval(() => {
   const now = Date.now();
   const windowMs = 60 * 1000;
   for (const [ip, record] of ipStore.entries()) {
@@ -20,6 +20,11 @@ setInterval(() => {
     }
   }
 }, 5 * 60 * 1000);
+
+// Prevent cleanup timer from blocking Node process exit in serverless / test runners
+if (cleanupTimer && typeof cleanupTimer.unref === "function") {
+  cleanupTimer.unref();
+}
 
 export interface RateLimitResult {
   allowed: boolean;

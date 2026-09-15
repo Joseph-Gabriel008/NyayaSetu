@@ -4,12 +4,11 @@
 
 export async function extractTextFromPdf(buffer: Buffer): Promise<string> {
   try {
-    // Dynamic import to prevent client bundle inclusion
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    type PdfParseFn = (doc: Buffer) => Promise<{ text: string }>;
     const pdfParseModule = await import("pdf-parse");
-    // Handle both default and named export variants
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const pdfParse = (pdfParseModule as any).default || pdfParseModule;
+    const pdfParse: PdfParseFn =
+      (pdfParseModule as unknown as { default?: PdfParseFn }).default ||
+      (pdfParseModule as unknown as PdfParseFn);
 
     const data = await pdfParse(buffer);
     if (!data || !data.text) {
